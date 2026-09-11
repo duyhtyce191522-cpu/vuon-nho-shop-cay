@@ -151,7 +151,7 @@ export default function HeroBanner({
           }}
         >
           <img
-            src="https://www.google.com/imgres?q=%E1%BA%A3nh%20c%C3%A2y%20c%E1%BB%91i&imgurl=https%3A%2F%2Fimg.tripi.vn%2Fcdn-cgi%2Fimage%2Fwidth%3D700%2Cheight%3D700%2Fhttps%3A%2F%2Fgcs.tripi.vn%2Fpublic-tripi%2Ftripi-feed%2Fimg%2F478422kzG%2Fanh-mo-ta.png&imgrefurl=https%3A%2F%2Fmytour.vn%2Fvi%2Fblog%2Fbai-viet%2Fdanh-sach-hon-1000-hinh-nen-cay-xanh-tuoi-mat-sac-net.html&docid=Ctt8KznUiu7EyM&tbnid=yCgGN4Sv3OqXWM&vet=12ahUKEwi47_PHg-eWAxUwyzgGHUSzGd4QnPAOegUI2AMQAA..i&w=700&h=466&hcb=2&ved=2ahUKEwi47_PHg-eWAxUwyzgGHUSzGd4QnPAOegUI2AMQAA"
+            src="https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/478422kzG/anh-mo-ta.png"
             alt="Vườn Nhỏ của Yến Duy - Cây xanh & Chậu gốm"
             style={{
               width: "100%",
