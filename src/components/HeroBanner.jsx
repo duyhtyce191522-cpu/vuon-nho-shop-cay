@@ -151,7 +151,7 @@ export default function HeroBanner({
           }}
         >
           <img
-            src="/hero-plants.jpg"
+            src="https://images.unsplash.com/photo-1463320726281-696a485928c7?auto=format&fit=crop&w=1200&q=80"
             alt="Vườn Nhỏ của Yến Duy - Cây xanh & Chậu gốm"
             style={{
               width: "100%",
