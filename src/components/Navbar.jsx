@@ -88,7 +88,7 @@ export default function Navbar({
           </div>
 
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span
                 style={{
                   fontFamily: "var(--font-serif)",
@@ -102,14 +102,11 @@ export default function Navbar({
               </span>
               <span
                 style={{
-                  fontSize: "11px",
+                  fontFamily: "var(--font-serif)",
+                  fontSize: "22px",
                   fontWeight: 700,
-                  background: "var(--moss-100)",
-                  color: "var(--forest-800)",
-                  padding: "2px 8px",
-                  borderRadius: "var(--r-full)",
-                  border: "1px solid var(--moss-200)",
-                  letterSpacing: "0.2px",
+                  color: "var(--leaf-600)",
+                  letterSpacing: "-0.5px",
                 }}
               >
                 Yến Duy
