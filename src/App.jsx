@@ -2768,6 +2768,7 @@ function AdminView({
   onEdit,
   onAddNew,
   onStatusChange,
+  onDeleteOrder,
 }) {
   // ============================================================
   // ADMIN LOGIN
@@ -3201,36 +3202,26 @@ function AdminView({
           </tbody>
         </table>
       </div>
-
-      {/* ======================================================
+{/* ======================================================
           ORDERS
       ====================================================== */}
 
       <h2
         style={{
-          fontFamily:
-            FONT_DISPLAY,
-          fontSize:
-            "22px",
-          color:
-            COLORS.forest,
-          marginBottom:
-            "14px",
+          fontFamily: FONT_DISPLAY,
+          fontSize: "22px",
+          color: COLORS.forest,
+          marginBottom: "14px",
         }}
       >
-        Đơn hàng (
-        {orders.length}
-        )
+        Đơn hàng ({orders.length})
       </h2>
 
-      {orders.length ===
-      0 ? (
+      {orders.length === 0 ? (
         <p
           style={{
-            color:
-              COLORS.inkSoft,
-            fontSize:
-              "14px",
+            color: COLORS.inkSoft,
+            fontSize: "14px",
           }}
         >
           Chưa có đơn hàng nào.
@@ -3238,196 +3229,185 @@ function AdminView({
       ) : (
         <div
           style={{
-            display:
-              "flex",
-            flexDirection:
-              "column",
-            gap:
-              "12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
           }}
         >
-          {orders.map(
-            (order) => (
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              style={{
+                background: COLORS.surface,
+                border: `1px solid ${COLORS.line}`,
+                borderRadius: "10px",
+                padding: "14px",
+              }}
+            >
+              {/* ================================
+                    THÔNG TIN KHÁCH + TRẠNG THÁI
+                  ================================= */}
               <div
-                key={
-                  order.id
-                }
                 style={{
-                  background:
-                    COLORS.surface,
-                  border:
-                    `1px solid ${COLORS.line}`,
-                  borderRadius:
-                    "10px",
-                  padding:
-                    "14px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginBottom: "10px",
                 }}
               >
-                <div
-                  style={{
-                    display:
-                      "flex",
-                    justifyContent:
-                      "space-between",
-                    flexWrap:
-                      "wrap",
-                    gap:
-                      "8px",
-                    marginBottom:
-                      "6px",
-                  }}
-                >
-                  <div>
-                    <div
-                      style={{
-                        fontSize:
-                          "14px",
-                        fontWeight:
-                          600,
-                      }}
-                    >
-                      {
-                        order.buyer
-                          ?.name
-                      }{" "}
-                      ·{" "}
-                      {
-                        order.buyer
-                          ?.phone
-                      }
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize:
-                          "12px",
-                        color:
-                          COLORS.inkSoft,
-                      }}
-                    >
-                      {
-                        order.buyer
-                          ?.address
-                      }
-                    </div>
+                {/* Thông tin khách hàng */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {order.buyer?.name} ·{" "}
+                    {order.buyer?.phone}
                   </div>
 
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: COLORS.inkSoft,
+                      marginTop: "3px",
+                    }}
+                  >
+                    {order.buyer?.address}
+                  </div>
+                </div>
+
+                {/* Trạng thái + nút xóa */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end",
+                    gap: "6px",
+                  }}
+                >
                   <select
-                    value={
-                      order.status
-                    }
-                    onChange={(
-                      e
-                    ) =>
+                    value={order.status}
+                    onChange={(e) =>
                       onStatusChange(
                         order.id,
-                        e.target
-                          .value
+                        e.target.value
                       )
                     }
                     style={{
-                      border:
-                        `1px solid ${COLORS.line}`,
-                      borderRadius:
-                        "6px",
-                      padding:
-                        "5px 8px",
-                      fontSize:
-                        "12px",
-                      height:
-                        "fit-content",
+                      border: `1px solid ${COLORS.line}`,
+                      borderRadius: "6px",
+                      padding: "5px 8px",
+                      fontSize: "12px",
+                      height: "fit-content",
                     }}
                   >
-                    <option>
+                    <option value="Chờ xử lý">
                       Chờ xử lý
                     </option>
 
-                    <option>
+                    <option value="Đang giao">
                       Đang giao
                     </option>
 
-                    <option>
+                    <option value="Hoàn tất">
                       Hoàn tất
                     </option>
 
-                    <option>
+                    <option value="Đã huỷ">
                       Đã huỷ
                     </option>
                   </select>
-                </div>
 
-                <div
-                  style={{
-                    fontSize:
-                      "13px",
-                    color:
-                      COLORS.inkSoft,
-                  }}
-                >
-                  {(
-                    order.items ||
-                    []
-                  )
-                    .map(
-                      (
-                        item
-                      ) =>
-                        `${item.name} ×${item.qty}`
-                    )
-                    .join(
-                      ", "
-                    )}
-                </div>
+                  {/* ================================
+                        CHỈ CHO XÓA ĐƠN ĐÃ HOÀN TẤT
+                        HOẶC ĐÃ HỦY
+                      ================================= */}
+                  {(order.status === "Hoàn tất" ||
+                    order.status === "Đã huỷ" ||
+                    order.status === "Đã hủy") && (
+                    <button
+                      onClick={() => {
+                        const confirmed =
+                          window.confirm(
+                            `Bạn có chắc chắn muốn xóa đơn hàng ${order.id}?`
+                          );
 
-                <div
-                  style={{
-                    fontWeight:
-                      700,
-                    color:
-                      COLORS.forest,
-                    fontSize:
-                      "13px",
-                    marginTop:
-                      "4px",
-                  }}
-                >
-                  {formatVND(
-                    order.total
+                        if (confirmed) {
+                          onDeleteOrder(order.id);
+                        }
+                      }}
+                      style={{
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "5px 10px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        background: "#B5654A",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      🗑️ Xóa đơn hàng
+                    </button>
                   )}
                 </div>
-
-                <div
-                  style={{
-                    fontSize:
-                      "11px",
-                    color:
-                      COLORS.inkSoft,
-                    marginTop:
-                      "6px",
-                  }}
-                >
-                  Mã đơn:{" "}
-                  {
-                    order.id
-                  }
-                  {" · "}
-                  {order.createdAt
-                    ? new Date(
-                        order.createdAt
-                      ).toLocaleString(
-                        "vi-VN"
-                      )
-                    : ""}
-                </div>
               </div>
-            )
-          )}
+
+              {/* ================================
+                    SẢN PHẨM TRONG ĐƠN
+                  ================================= */}
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: COLORS.inkSoft,
+                }}
+              >
+                {(order.items || [])
+                  .map(
+                    (item) =>
+                      `${item.name} ×${item.qty}`
+                  )
+                  .join(", ")}
+              </div>
+
+              {/* ================================
+                    TỔNG TIỀN
+                  ================================= */}
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: COLORS.forest,
+                  fontSize: "13px",
+                  marginTop: "4px",
+                }}
+              >
+                {formatVND(order.total)}
+              </div>
+
+              {/* ================================
+                    MÃ ĐƠN + THỜI GIAN
+                  ================================= */}
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: COLORS.inkSoft,
+                  marginTop: "6px",
+                }}
+              >
+                Mã đơn: {order.id}
+                {" · "}
+                {order.createdAt
+                  ? new Date(
+                      order.createdAt
+                    ).toLocaleString("vi-VN")
+                  : ""}
+              </div>
+            </div>
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-
 // ============================================================
 // TABLE STYLES
 // ============================================================
