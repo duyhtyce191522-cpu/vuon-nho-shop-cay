@@ -647,7 +647,53 @@ export default function PlantShop() {
       );
     }
   }
+// =====================================================
+// DELETE ORDER
+// =====================================================
 
+const deleteOrder = async (orderId) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/orders/${orderId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const data = await response.json();
+
+    // DELETE SUCCESS
+    if (response.ok && data.success) {
+
+      // Remove order from frontend immediately
+      setOrders((prevOrders) =>
+        prevOrders.filter(
+          (order) => order.id !== orderId
+        )
+      );
+
+      showToast("Xóa đơn hàng thành công");
+
+      return;
+    }
+
+    // DELETE FAILED
+    showToast(
+      data.message || "Không thể xóa đơn hàng"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Delete order error:",
+      error
+    );
+
+    showToast(
+      "Không thể kết nối đến server"
+    );
+  }
+};
   // ============================================================
   // PRODUCT CRUD - DELETE
   // ============================================================
@@ -1224,12 +1270,14 @@ export default function PlantShop() {
       setShowForm(true);
     }}
 
-    onAddNew={() => {
+       onAddNew={() => {
       setEditingProduct(null);
       setShowForm(true);
     }}
 
     onStatusChange={updateOrderStatus}
+
+    onDeleteOrder={deleteOrder}
   />
 )}
 
