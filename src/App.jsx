@@ -1176,85 +1176,67 @@ export default function PlantShop() {
         />
       )}
 
-      {/* ========================================================
-          ADMIN
-      ======================================================== */}
+    {/* =====================================================
+    ADMIN
+===================================================== */}
 
-      {view ===
-        "admin" && (
-        <AdminView
-          authed={
-            adminAuthed
-          }
-          pwInput={
-            pwInput
-          }
-          setPwInput={
-            setPwInput
-          }
-          pwError={
-            pwError
-          }
-          onLogin={() => {
-            if (
-              pwInput ===
-              "admin123"
-            ) {
-              setAdminAuthed(
-                true
-              );
+{view === "admin" && (
+  <AdminView
+    authed={adminAuthed}
+    pwInput={pwInput}
+    setPwInput={setPwInput}
+    pwError={pwError}
 
-              setPwError(
-                false
-              );
+    onLogin={async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: "admin",
+            password: pwInput,
+          }),
+        });
 
-              showToast(
-                "Đăng nhập thành công"
-              );
-            } else {
-              setPwError(
-                true
-              );
-            }
-          }}
-          products={
-            products || []
-          }
-          orders={
-            orders || []
-          }
-          onDelete={
-            deleteProduct
-          }
-          onEdit={(
-            product
-          ) => {
-            setEditingProduct(
-              product
-            );
+        const data = await response.json();
 
-            setShowForm(
-              true
-            );
-          }}
-          onAddNew={() => {
-            setEditingProduct(
-              null
-            );
+        if (response.ok && data.success) {
+          setAdminAuthed(true);
+          setPwError(false);
+          showToast("Đăng nhập thành công");
+        } else {
+          setPwError(true);
+        }
+      } catch (error) {
+        console.error("Admin login error:", error);
+        setPwError(true);
+      }
+    }}
 
-            setShowForm(
-              true
-            );
-          }}
-          onStatusChange={
-            updateOrderStatus
-          }
-        />
-      )}
+    products={products}
+    orders={orders}
+    onDelete={deleteProduct}
 
-      {/* ========================================================
-          PRODUCT FORM
-      ======================================================== */}
+    onEdit={(product) => {
+      setEditingProduct(product);
+      setShowForm(true);
+    }}
+
+    onAddNew={() => {
+      setEditingProduct(null);
+      setShowForm(true);
+    }}
+
+    onStatusChange={updateOrderStatus}
+  />
+)}
+
+{/* =====================================================
+    PRODUCT FORM
+===================================================== */}
+
 
       {showForm && (
         <ProductFormModal
