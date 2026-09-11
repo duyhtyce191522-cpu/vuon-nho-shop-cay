@@ -687,6 +687,7 @@ export default function PlantShop() {
                 Mang thiên nhiên xanh mát đến từng góc bàn của bạn
               </div>
             </div>
+          </div>
 
           <div
             style={{
