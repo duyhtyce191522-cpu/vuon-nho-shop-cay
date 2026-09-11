@@ -151,7 +151,7 @@ export default function HeroBanner({
           }}
         >
           <img
-            src="https://images.unsplash.com/photo-1463320726281-696a485928c7?auto=format&fit=crop&w=1200&q=80"
+            src="https://tripi.vn/blog/vi/doi-song/tuyen-tap-hinh-nen-cay-xanh-dep-nhat-danh-cho-ban-tripi"
             alt="Vườn Nhỏ của Yến Duy - Cây xanh & Chậu gốm"
             style={{
               width: "100%",
