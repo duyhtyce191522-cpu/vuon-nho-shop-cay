@@ -90,7 +90,7 @@ export default function HeroBanner({
               letterSpacing: "-0.8px",
             }}
           >
-            Cây Xanh Cho Góc Nhỏ{" "}
+            Góc Nhỏ{" "}
             <span
               style={{
                 color: "var(--leaf-600)",
@@ -98,7 +98,7 @@ export default function HeroBanner({
                 position: "relative",
               }}
             >
-              Yến Duy
+              Hải Duy
             </span>
           </h1>
 
