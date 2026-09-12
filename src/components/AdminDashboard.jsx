@@ -1,5 +1,25 @@
 import { useState } from "react";
-import { Lock, Plus, Pencil, Trash2, ShieldCheck, LogOut, Package, TrendingUp, ShoppingBag, Sprout, Clock } from "lucide-react";
+import {
+  Lock,
+  Plus,
+  Pencil,
+  Trash2,
+  ShieldCheck,
+  LogOut,
+  Package,
+  TrendingUp,
+  ShoppingBag,
+  Sprout,
+  Clock,
+  Truck,
+  CheckCircle2,
+  XCircle,
+  Check,
+  X,
+  RotateCcw,
+  EyeOff,
+  Filter,
+} from "lucide-react";
 import { formatVND, formatDateTimeVN } from "../utils/formatters";
 
 export default function AdminDashboard({
@@ -15,8 +35,14 @@ export default function AdminDashboard({
   onEditProduct,
   onAddNewProduct,
   onUpdateOrderStatus,
+  hiddenOrderIds = [],
+  onHideOrder,
+  onUnhideAllOrders,
 }) {
   const [adminTab, setAdminTab] = useState("products"); // "products" | "orders"
+  const [orderStatusFilter, setOrderStatusFilter] = useState("Tất cả");
+  const [editingStatusOrderId, setEditingStatusOrderId] = useState(null);
+  const [tempStatus, setTempStatus] = useState("Chờ xử lý");
 
   // ------------------------------------------------------------
   // 1. LOGIN SCREEN
@@ -120,14 +146,72 @@ export default function AdminDashboard({
   }
 
   // ------------------------------------------------------------
-  // 2. DASHBOARD METRICS CALCULATIONS
+  // 2. DASHBOARD METRICS & ORDERS FILTERING
   // ------------------------------------------------------------
-  const totalRevenue = orders
-    .filter((o) => o.status !== "Đã huỷ")
+  // Filter out hidden orders (soft-deleted from UI, preserved in DB)
+  const visibleOrders = (orders || []).filter(
+    (o) => !hiddenOrderIds.includes(String(o.id))
+  );
+
+  const countAll = visibleOrders.length;
+  const countPending = visibleOrders.filter((o) => (o.status || "Chờ xử lý") === "Chờ xử lý").length;
+  const countShipping = visibleOrders.filter((o) => o.status === "Đang giao").length;
+  const countCompleted = visibleOrders.filter((o) => o.status === "Hoàn tất").length;
+  const countCancelled = visibleOrders.filter((o) => o.status === "Đã huỷ" || o.status === "Đã hủy").length;
+
+  const totalRevenue = visibleOrders
+    .filter((o) => o.status !== "Đã huỷ" && o.status !== "Đã hủy")
     .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
   const totalStockCount = products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
-  const pendingOrdersCount = orders.filter((o) => o.status === "Chờ xử lý").length;
+  const pendingOrdersCount = countPending;
+
+  const filteredOrders = visibleOrders.filter((order) => {
+    if (orderStatusFilter === "Tất cả") return true;
+    if (orderStatusFilter === "Đã huỷ") {
+      return order.status === "Đã huỷ" || order.status === "Đã hủy";
+    }
+    return (order.status || "Chờ xử lý") === orderStatusFilter;
+  });
+
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case "Đang giao":
+        return {
+          label: "Đang giao",
+          color: "#2563EB",
+          bg: "#EFF6FF",
+          border: "#BFDBFE",
+          icon: Truck,
+        };
+      case "Hoàn tất":
+        return {
+          label: "Hoàn tất",
+          color: "var(--leaf-600)",
+          bg: "var(--moss-100)",
+          border: "var(--moss-200)",
+          icon: CheckCircle2,
+        };
+      case "Đã huỷ":
+      case "Đã hủy":
+        return {
+          label: "Đã huỷ",
+          color: "var(--terracotta-500)",
+          bg: "var(--terracotta-100)",
+          border: "rgba(194, 94, 52, 0.25)",
+          icon: XCircle,
+        };
+      case "Chờ xử lý":
+      default:
+        return {
+          label: "Chờ xử lý",
+          color: "var(--amber-600)",
+          bg: "var(--amber-100)",
+          border: "rgba(217, 130, 43, 0.3)",
+          icon: Clock,
+        };
+    }
+  };
 
   return (
     <div
@@ -331,7 +415,22 @@ export default function AdminDashboard({
           className={`category-pill ${adminTab === "orders" ? "active" : ""}`}
         >
           <Clock size={15} />
-          <span>Quản lý đơn hàng ({orders.length})</span>
+          <span>Quản lý đơn hàng ({visibleOrders.length})</span>
+          {countPending > 0 && (
+            <span
+              style={{
+                marginLeft: "4px",
+                background: "var(--amber-500)",
+                color: "#ffffff",
+                padding: "1px 6px",
+                borderRadius: "10px",
+                fontSize: "11px",
+                fontWeight: 700,
+              }}
+            >
+              {countPending} mới
+            </span>
+          )}
         </button>
       </div>
 
@@ -467,111 +566,433 @@ export default function AdminDashboard({
 
       {/* TAB CONTENT 2: ORDERS MANAGEMENT */}
       {adminTab === "orders" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          {orders.length === 0 ? (
-            <div className="glass-panel" style={{ padding: "40px", borderRadius: "var(--r-lg)", textAlign: "center", color: "var(--text-muted)" }}>
-              Chưa có đơn hàng nào từ khách.
-            </div>
-          ) : (
-            orders.map((order) => (
-              <div
-                key={order.id}
-                className="interactive-card glass-panel"
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Status Filter Tabs Bar */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "10px",
+              background: "var(--surface)",
+              padding: "12px 18px",
+              borderRadius: "var(--r-lg)",
+              border: "1px solid var(--border-light)",
+              boxShadow: "0 2px 6px rgba(22, 51, 36, 0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span
                 style={{
-                  padding: "18px 22px",
-                  borderRadius: "var(--r-lg)",
-                  background: "var(--surface)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  color: "var(--forest-950)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  marginRight: "4px",
                 }}
               >
+                <Filter size={14} color="var(--leaf-600)" />
+                Lọc trạng thái:
+              </span>
+
+              {[
+                { key: "Tất cả", label: "Tất cả", count: countAll, color: "var(--forest-900)" },
+                { key: "Chờ xử lý", label: "Chờ xử lý", count: countPending, color: "var(--amber-600)" },
+                { key: "Đang giao", label: "Đang giao", count: countShipping, color: "#2563EB" },
+                { key: "Hoàn tất", label: "Hoàn tất", count: countCompleted, color: "var(--leaf-600)" },
+                { key: "Đã huỷ", label: "Đã huỷ", count: countCancelled, color: "var(--terracotta-500)" },
+              ].map((tab) => {
+                const isActive = orderStatusFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setOrderStatusFilter(tab.key);
+                      setEditingStatusOrderId(null);
+                    }}
+                    style={{
+                      padding: "6px 13px",
+                      borderRadius: "var(--r-full)",
+                      fontSize: "12.5px",
+                      fontWeight: isActive ? 700 : 500,
+                      background: isActive ? "var(--forest-900)" : "var(--bg-canvas)",
+                      color: isActive ? "#ffffff" : "var(--forest-900)",
+                      border: `1px solid ${isActive ? "var(--forest-900)" : "var(--border-light)"}`,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all var(--tr-fast)",
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      style={{
+                        padding: "1px 7px",
+                        borderRadius: "10px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        background: isActive ? "rgba(255, 255, 255, 0.25)" : "rgba(22, 51, 36, 0.08)",
+                        color: isActive ? "#ffffff" : tab.color,
+                      }}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* If there are hidden orders, show unhide option */}
+            {hiddenOrderIds.length > 0 && onUnhideAllOrders && (
+              <button
+                onClick={onUnhideAllOrders}
+                title="Khôi phục các đơn hàng đã ẩn"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "var(--text-muted)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  borderRadius: "var(--r-sm)",
+                  transition: "color var(--tr-fast)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--forest-900)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+              >
+                <RotateCcw size={12} />
+                <span>Hiện lại {hiddenOrderIds.length} đơn đã xóa (ẩn)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Orders List or Empty State */}
+          {filteredOrders.length === 0 ? (
+            <div
+              className="glass-panel"
+              style={{
+                padding: "48px 24px",
+                borderRadius: "var(--r-lg)",
+                textAlign: "center",
+                background: "var(--surface)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "50%",
+                  background: "var(--bg-canvas)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ShoppingBag size={22} color="var(--text-light)" />
+              </div>
+              <div style={{ color: "var(--forest-950)", fontWeight: 600, fontSize: "15px" }}>
+                {orderStatusFilter === "Tất cả"
+                  ? "Chưa có đơn hàng nào từ khách."
+                  : `Không có đơn hàng nào ở trạng thái "${orderStatusFilter}".`}
+              </div>
+              {orderStatusFilter !== "Tất cả" && (
+                <button
+                  onClick={() => setOrderStatusFilter("Tất cả")}
+                  className="btn-nature-secondary"
+                  style={{ padding: "6px 14px", fontSize: "12.5px" }}
+                >
+                  Xem tất cả đơn hàng ({countAll})
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredOrders.map((order) => {
+              const statusCfg = getStatusConfig(order.status);
+              const StatusIcon = statusCfg.icon;
+              const isEditingStatus = editingStatusOrderId === order.id;
+              const isCancelled = order.status === "Đã huỷ" || order.status === "Đã hủy";
+
+              return (
                 <div
+                  key={order.id}
+                  className="interactive-card glass-panel"
                   style={{
+                    padding: "20px 24px",
+                    borderRadius: "var(--r-lg)",
+                    background: "var(--surface)",
                     display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: "10px",
+                    flexDirection: "column",
+                    gap: "14px",
+                    borderLeft: `4px solid ${statusCfg.color}`,
                   }}
                 >
-                  <div>
-                    <span style={{ fontWeight: 700, color: "var(--forest-950)", fontSize: "15px" }}>
-                      {order.buyer?.name} · {order.buyer?.phone}
-                    </span>
-                    <div style={{ fontSize: "12.5px", color: "var(--text-muted)", marginTop: "2px" }}>
-                      Địa chỉ: {order.buyer?.address}
+                  {/* Top Bar of Order Card */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      flexWrap: "wrap",
+                      gap: "12px",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 700, color: "var(--forest-950)", fontSize: "16px" }}>
+                          {order.buyer?.name || "Khách hàng"}
+                        </span>
+                        <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: 500 }}>
+                          · {order.buyer?.phone || "Chưa có SĐT"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "12.5px", color: "var(--text-muted)", marginTop: "4px" }}>
+                        📍 {order.buyer?.address || "Chưa có địa chỉ nhận hàng"}
+                      </div>
+                    </div>
+
+                    {/* Action Area: Status Badge, Edit Button, Delete Button */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      {!isEditingStatus ? (
+                        <>
+                          {/* Current Status Badge */}
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "5px 12px",
+                              borderRadius: "var(--r-full)",
+                              background: statusCfg.bg,
+                              border: `1px solid ${statusCfg.border}`,
+                              color: statusCfg.color,
+                              fontSize: "12.5px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            <StatusIcon size={14} />
+                            <span>{order.status || "Chờ xử lý"}</span>
+                          </div>
+
+                          {/* Nút "Sửa trạng thái" */}
+                          <button
+                            onClick={() => {
+                              setEditingStatusOrderId(order.id);
+                              setTempStatus(order.status || "Chờ xử lý");
+                            }}
+                            title="Đặt lại trạng thái đơn hàng"
+                            style={{
+                              padding: "5px 10px",
+                              borderRadius: "var(--r-sm)",
+                              background: "var(--moss-100)",
+                              color: "var(--forest-900)",
+                              border: "1px solid var(--moss-200)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              transition: "all var(--tr-fast)",
+                            }}
+                          >
+                            <Pencil size={12} />
+                            <span>Sửa</span>
+                          </button>
+
+                          {/* Nút "Xóa đơn" (CHỈ HIỆN KHI ĐƠN Ở TRẠNG THÁI ĐÃ HỦY) */}
+                          {isCancelled && onHideOrder && (
+                            <button
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  `Bạn có chắc chắn muốn xóa đơn hàng #${order.id} khỏi hệ thống?\n\n(Lưu ý: Đơn hàng chỉ được ẩn đi khỏi danh sách quản lý, hoàn toàn KHÔNG xóa trong database)`
+                                );
+                                if (confirmed) {
+                                  onHideOrder(order.id);
+                                }
+                              }}
+                              title="Xóa đơn hàng này khỏi hệ thống (chỉ ẩn đi, không xóa trong database)"
+                              style={{
+                                padding: "5px 10px",
+                                borderRadius: "var(--r-sm)",
+                                background: "var(--terracotta-100)",
+                                color: "var(--terracotta-500)",
+                                border: "1px solid rgba(194, 94, 52, 0.3)",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                transition: "all var(--tr-fast)",
+                              }}
+                            >
+                              <Trash2 size={12} />
+                              <span>Xóa đơn</span>
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        /* Inline Status Editor */
+                        <div
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            background: "var(--bg-canvas)",
+                            padding: "4px 8px",
+                            borderRadius: "var(--r-md)",
+                            border: "1.5px solid var(--leaf-600)",
+                            boxShadow: "0 2px 8px rgba(22, 51, 36, 0.08)",
+                          }}
+                        >
+                          <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--forest-900)" }}>
+                            Đặt lại:
+                          </span>
+                          <select
+                            value={tempStatus}
+                            onChange={(e) => setTempStatus(e.target.value)}
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "var(--r-sm)",
+                              border: "1px solid var(--border-light)",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              background: "#ffffff",
+                              color: "var(--forest-950)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <option value="Chờ xử lý">Chờ xử lý</option>
+                            <option value="Đang giao">Đang giao</option>
+                            <option value="Hoàn tất">Hoàn tất</option>
+                            <option value="Đã huỷ">Đã huỷ</option>
+                          </select>
+
+                          <button
+                            onClick={() => {
+                              onUpdateOrderStatus(order.id, tempStatus);
+                              setEditingStatusOrderId(null);
+                            }}
+                            className="btn-nature-primary"
+                            style={{
+                              padding: "4px 10px",
+                              fontSize: "11.5px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "3px",
+                            }}
+                            title="Lưu trạng thái mới"
+                          >
+                            <Check size={12} />
+                            <span>Lưu</span>
+                          </button>
+
+                          <button
+                            onClick={() => setEditingStatusOrderId(null)}
+                            className="btn-nature-secondary"
+                            style={{
+                              padding: "4px 8px",
+                              fontSize: "11.5px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                            title="Hủy bỏ"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Status update dropdown */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>Trạng thái:</span>
-                    <select
-                      value={order.status || "Chờ xử lý"}
-                      onChange={(e) => onUpdateOrderStatus(order.id, e.target.value)}
+                  {/* Items Preview */}
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--forest-800)",
+                      background: "var(--bg-canvas)",
+                      padding: "10px 14px",
+                      borderRadius: "var(--r-md)",
+                      border: "1px solid var(--border-light)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
+                    <div
                       style={{
-                        padding: "6px 12px",
-                        borderRadius: "var(--r-md)",
-                        border: "1.5px solid var(--border-light)",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        background:
-                          order.status === "Hoàn tất"
-                            ? "var(--moss-100)"
-                            : order.status === "Đang giao"
-                            ? "#EFF6FF"
-                            : order.status === "Đã huỷ"
-                            ? "var(--terracotta-100)"
-                            : "var(--amber-100)",
-                        color:
-                          order.status === "Hoàn tất"
-                            ? "var(--leaf-600)"
-                            : order.status === "Đang giao"
-                            ? "#2563EB"
-                            : order.status === "Đã huỷ"
-                            ? "var(--terracotta-500)"
-                            : "var(--amber-500)",
+                        fontSize: "11.5px",
+                        fontWeight: 700,
+                        color: "var(--text-muted)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
                       }}
                     >
-                      <option value="Chờ xử lý">Chờ xử lý</option>
-                      <option value="Đang giao">Đang giao</option>
-                      <option value="Hoàn tất">Hoàn tất</option>
-                      <option value="Đã huỷ">Đã huỷ</option>
-                    </select>
+                      Chi tiết sản phẩm ({(order.items || []).reduce((s, it) => s + (it.qty || 1), 0)} món):
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                      {(order.items || []).map((it, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            background: "#ffffff",
+                            padding: "4px 10px",
+                            borderRadius: "var(--r-sm)",
+                            border: "1px solid var(--border-light)",
+                            fontSize: "12.5px",
+                            fontWeight: 600,
+                            color: "var(--forest-950)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <span>🌿 {it.name}</span>
+                          <strong style={{ color: "var(--leaf-600)" }}>×{it.qty}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer of Card */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "12px",
+                      color: "var(--text-light)",
+                      borderTop: "1px dashed var(--border-light)",
+                      paddingTop: "10px",
+                      flexWrap: "wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    <span>
+                      Mã đơn: <strong style={{ color: "var(--forest-900)" }}>#{order.id}</strong> · {formatDateTimeVN(order.createdAt || new Date())}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                      <span style={{ fontSize: "11.5px", color: "var(--text-muted)" }}>Tổng tiền:</span>
+                      <span style={{ fontSize: "16.5px", fontWeight: 800, color: "var(--forest-950)" }}>
+                        {formatVND(order.total)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Items preview */}
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--forest-800)",
-                    background: "var(--bg-canvas)",
-                    padding: "8px 12px",
-                    borderRadius: "var(--r-sm)",
-                  }}
-                >
-                  {(order.items || []).map((it) => `${it.name} (×${it.qty})`).join(" · ")}
-                </div>
-
-                {/* Footer of card */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    fontSize: "12px",
-                    color: "var(--text-light)",
-                  }}
-                >
-                  <span>Mã đơn: #{order.id} · {formatDateTimeVN(order.createdAt || new Date())}</span>
-                  <span style={{ fontSize: "16px", fontWeight: 800, color: "var(--forest-950)" }}>
-                    {formatVND(order.total)}
-                  </span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

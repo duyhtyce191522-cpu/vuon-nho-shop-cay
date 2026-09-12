@@ -83,6 +83,7 @@ export default function PlantShop() {
   const [view, setView] = useState("shop");
   const [products, setProducts] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [hiddenOrderIds, setHiddenOrderIds] = useState(() => getStorage("admin-hidden-orders", []));
   const [myOrderIds, setMyOrderIds] = useState(() => getStorage("my-order-ids", []));
   const [cart, setCart] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
@@ -347,6 +348,20 @@ export default function PlantShop() {
     }
   }
 
+  // Soft delete (hide) order without deleting from database
+  function hideOrder(orderId) {
+    const nextHidden = [...new Set([...(hiddenOrderIds || []), String(orderId)])];
+    setHiddenOrderIds(nextHidden);
+    setStorage("admin-hidden-orders", nextHidden);
+    showToast("Đã xóa đơn hàng #" + orderId + " khỏi hệ thống (chỉ ẩn, database vẫn giữ)");
+  }
+
+  function unhideAllOrders() {
+    setHiddenOrderIds([]);
+    setStorage("admin-hidden-orders", []);
+    showToast("Đã khôi phục hiển thị tất cả đơn hàng");
+  }
+
   // Delete product
   async function deleteProduct(id) {
     const confirmed = window.confirm("Bạn có chắc muốn xóa sản phẩm này không?");
@@ -603,6 +618,9 @@ export default function PlantShop() {
               setShowForm(true);
             }}
             onUpdateOrderStatus={updateOrderStatus}
+            hiddenOrderIds={hiddenOrderIds || []}
+            onHideOrder={hideOrder}
+            onUnhideAllOrders={unhideAllOrders}
           />
         )}
       </main>
