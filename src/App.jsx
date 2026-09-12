@@ -94,6 +94,12 @@ export default function PlantShop() {
   const [currentUser, setCurrentUser] = useState(() => getStorage("vuon-nho-user", null));
   const [authToken, setAuthToken] = useState(() => getStorage("vuon-nho-token", null));
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState("login");
+
+  function openAuth(tab = "login") {
+    setAuthModalTab(tab);
+    setAuthModalOpen(true);
+  }
 
   const [buyer, setBuyer] = useState(() => {
     const savedUser = getStorage("vuon-nho-user", null);
@@ -141,7 +147,7 @@ export default function PlantShop() {
       phone: user.phone || "",
       address: user.address || "",
     });
-    showToast(`Đăng nhập thành công! Chào ${user.full_name || user.username} 🌿`);
+    showToast(`Chào mừng ${user.full_name || user.username} đến với Vườn Nhỏ! 🌿`);
   }
 
   function handleUserLogout() {
@@ -153,6 +159,34 @@ export default function PlantShop() {
     if (view === "admin") setView("shop");
     showToast("Đã đăng xuất tài khoản");
   }
+
+  // Verify stored token with backend on mount
+  useEffect(() => {
+    async function verifyAuth() {
+      const savedToken = getStorage("vuon-nho-token", null);
+      if (!savedToken) return;
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${savedToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setCurrentUser(data.user);
+            setStorage("vuon-nho-user", data.user);
+            if (data.user.role === "admin") {
+              setAdminAuthed(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Backend auth check offline or unreachable:", err.message);
+      }
+    }
+
+    verifyAuth();
+  }, []);
 
   // Load Products & Orders from Backend
   useEffect(() => {
@@ -548,7 +582,7 @@ export default function PlantShop() {
         cartTotal={cartTotal}
         onOpenCart={() => setCartOpen(true)}
         currentUser={currentUser}
-        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenAuth={openAuth}
         onLogout={handleUserLogout}
       />
 
@@ -686,6 +720,8 @@ export default function PlantShop() {
         total={cartTotal}
         buyer={buyer}
         setBuyer={setBuyer}
+        currentUser={currentUser}
+        onOpenAuth={openAuth}
         onClose={() => {
           setCartOpen(false);
           if (checkoutStep === "done") resetCheckout();
@@ -714,6 +750,7 @@ export default function PlantShop() {
       {/* Auth Modal (Login / Register) */}
       <AuthModal
         isOpen={authModalOpen}
+        initialTab={authModalTab}
         onClose={() => setAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         apiUrl={API_URL}

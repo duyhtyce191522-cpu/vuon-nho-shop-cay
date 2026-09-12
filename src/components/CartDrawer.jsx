@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, Minus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, ShoppingBag, ShieldCheck, Sprout } from "lucide-react";
+import { X, Plus, Minus, Trash2, ArrowRight, ArrowLeft, CheckCircle2, ShoppingBag, ShieldCheck, Sprout, User, LogIn } from "lucide-react";
 import { formatVND } from "../utils/formatters";
 
 export default function CartDrawer({
@@ -9,6 +9,8 @@ export default function CartDrawer({
   total,
   buyer,
   setBuyer,
+  currentUser,
+  onOpenAuth,
   onClose,
   onChangeQty,
   onRemove,
@@ -408,6 +410,70 @@ export default function CartDrawer({
                 <ShieldCheck size={18} color="var(--leaf-600)" />
                 <span>Thanh toán khi nhận hàng (COD) & kiểm tra cây thoải mái trước khi nhận.</span>
               </div>
+
+              {/* Membership login reminder or status banner */}
+              {!currentUser ? (
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, rgba(56, 124, 89, 0.08) 0%, rgba(226, 245, 236, 0.6) 100%)",
+                    border: "1px solid var(--moss-200)",
+                    borderRadius: "var(--r-md)",
+                    padding: "10px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "10px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "var(--forest-900)" }}>
+                    <User size={16} color="var(--leaf-600)" />
+                    <span>Đã có tài khoản thành viên?</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onOpenAuth && onOpenAuth("login")}
+                    style={{
+                      background: "var(--forest-900)",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "var(--r-full)",
+                      padding: "5px 12px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      transition: "all var(--tr-fast)",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--leaf-600)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "var(--forest-900)")}
+                  >
+                    <LogIn size={13} />
+                    <span>Đăng nhập</span>
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: "var(--moss-100)",
+                    border: "1px solid var(--moss-200)",
+                    borderRadius: "var(--r-md)",
+                    padding: "8px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "12.5px",
+                    color: "var(--forest-950)",
+                    fontWeight: 600,
+                  }}
+                >
+                  <CheckCircle2 size={16} color="var(--leaf-600)" />
+                  <span>
+                    Đặt hàng với tài khoản: <strong>{currentUser.full_name || currentUser.username}</strong>
+                  </span>
+                </div>
+              )}
 
               {/* Input: Name */}
               <div>

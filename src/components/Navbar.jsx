@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, ClipboardList, ShieldCheck, ShoppingBag, Sprout, User, LogOut } from "lucide-react";
+import { Store, ClipboardList, ShieldCheck, ShoppingBag, Sprout, User, LogOut, LogIn, UserPlus } from "lucide-react";
 import { formatVND } from "../utils/formatters";
 
 export default function Navbar({
@@ -212,34 +212,72 @@ export default function Navbar({
             </button>
           )}
 
-          {/* User Account / Login Button */}
+          {/* User Account / Login & Register Buttons */}
           {!currentUser ? (
-            <button
-              onClick={onOpenAuth}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "7px 15px",
-                borderRadius: "var(--r-full)",
-                fontSize: "13px",
-                fontWeight: 600,
-                color: "var(--forest-950)",
-                background: "var(--moss-100)",
-                border: "1px solid var(--moss-200)",
-                cursor: "pointer",
-                transition: "all var(--tr-fast)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--moss-200)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--moss-100)";
-              }}
-            >
-              <User size={15} color="var(--leaf-600)" />
-              <span>Đăng nhập</span>
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button
+                onClick={() => onOpenAuth("login")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "6px 13px",
+                  borderRadius: "var(--r-full)",
+                  fontSize: "12.5px",
+                  fontWeight: 600,
+                  color: "var(--forest-900)",
+                  background: "transparent",
+                  border: "1px solid var(--border-light)",
+                  cursor: "pointer",
+                  transition: "all var(--tr-fast)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
+                  e.currentTarget.style.borderColor = "var(--moss-200)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "var(--border-light)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <LogIn size={14} color="var(--leaf-600)" />
+                <span>Đăng nhập</span>
+              </button>
+
+              <button
+                onClick={() => onOpenAuth("register")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "6px 14px",
+                  borderRadius: "var(--r-full)",
+                  fontSize: "12.5px",
+                  fontWeight: 700,
+                  color: "var(--forest-950)",
+                  background: "var(--moss-100)",
+                  border: "1px solid var(--moss-200)",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(22, 51, 36, 0.04)",
+                  transition: "all var(--tr-fast)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--moss-200)";
+                  e.currentTarget.style.borderColor = "var(--leaf-500)";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--moss-100)";
+                  e.currentTarget.style.borderColor = "var(--moss-200)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <UserPlus size={14} color="var(--leaf-600)" />
+                <span>Đăng ký</span>
+              </button>
+            </div>
           ) : (
             <div
               style={{
