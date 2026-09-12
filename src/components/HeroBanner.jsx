@@ -98,7 +98,7 @@ export default function HeroBanner({
                 position: "relative",
               }}
             >
-              Hải Duy
+              An Yên
             </span>
           </h1>
 
