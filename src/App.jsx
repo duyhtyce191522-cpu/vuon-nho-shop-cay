@@ -6,13 +6,14 @@ import CartDrawer from "./components/CartDrawer";
 import OrdersMineView from "./components/OrdersMineView";
 import AdminDashboard from "./components/AdminDashboard";
 import ProductFormModal from "./components/ProductFormModal";
+import AuthModal from "./components/AuthModal";
 import NatureBackground from "./components/NatureBackground";
 import Toast from "./components/Toast";
 import { getStorage, setStorage } from "./utils/storage";
 import { Sprout, Phone, MapPin } from "lucide-react";
 import "./App.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const SEED_PRODUCTS = [
   {
@@ -89,10 +90,18 @@ export default function PlantShop() {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState("cart");
 
-  const [buyer, setBuyer] = useState({
-    name: "",
-    phone: "",
-    address: "",
+  // User Authentication states
+  const [currentUser, setCurrentUser] = useState(() => getStorage("vuon-nho-user", null));
+  const [authToken, setAuthToken] = useState(() => getStorage("vuon-nho-token", null));
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const [buyer, setBuyer] = useState(() => {
+    const savedUser = getStorage("vuon-nho-user", null);
+    return {
+      name: savedUser?.full_name || savedUser?.username || "",
+      phone: savedUser?.phone || "",
+      address: savedUser?.address || "",
+    };
   });
 
   const [search, setSearch] = useState("");
@@ -101,7 +110,10 @@ export default function PlantShop() {
   const [toast, setToast] = useState(null);
 
   // Admin states
-  const [adminAuthed, setAdminAuthed] = useState(false);
+  const [adminAuthed, setAdminAuthed] = useState(() => {
+    const savedUser = getStorage("vuon-nho-user", null);
+    return savedUser?.role === "admin";
+  });
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -113,6 +125,33 @@ export default function PlantShop() {
     setTimeout(() => {
       setToast(null);
     }, 2400);
+  }
+
+  // Auth Handlers
+  function handleLoginSuccess(user, token) {
+    setCurrentUser(user);
+    setAuthToken(token);
+    setStorage("vuon-nho-user", user);
+    setStorage("vuon-nho-token", token);
+    if (user.role === "admin") {
+      setAdminAuthed(true);
+    }
+    setBuyer({
+      name: user.full_name || user.username || "",
+      phone: user.phone || "",
+      address: user.address || "",
+    });
+    showToast(`Đăng nhập thành công! Chào ${user.full_name || user.username} 🌿`);
+  }
+
+  function handleUserLogout() {
+    setCurrentUser(null);
+    setAuthToken(null);
+    setStorage("vuon-nho-user", null);
+    setStorage("vuon-nho-token", null);
+    setAdminAuthed(false);
+    if (view === "admin") setView("shop");
+    showToast("Đã đăng xuất tài khoản");
   }
 
   // Load Products & Orders from Backend
@@ -238,6 +277,7 @@ export default function PlantShop() {
     }
 
     const orderPayload = {
+      userId: currentUser?.id || null,
       items: cartItems.map((item) => ({
         productId: item.id,
         name: item.name,
@@ -315,7 +355,15 @@ export default function PlantShop() {
   function resetCheckout() {
     setCheckoutStep("cart");
     setCartOpen(false);
-    setBuyer({ name: "", phone: "", address: "" });
+    if (!currentUser) {
+      setBuyer({ name: "", phone: "", address: "" });
+    } else {
+      setBuyer({
+        name: currentUser.full_name || currentUser.username || "",
+        phone: currentUser.phone || "",
+        address: currentUser.address || "",
+      });
+    }
   }
 
   // Update order status
@@ -480,10 +528,12 @@ export default function PlantShop() {
 
   // My Orders list
   const myOrders = useMemo(() => {
-    return (orders || []).filter((order) =>
-      (myOrderIds || []).some((id) => String(id) === String(order.id))
-    );
-  }, [orders, myOrderIds]);
+    return (orders || []).filter((order) => {
+      const isStoredLocal = (myOrderIds || []).some((id) => String(id) === String(order.id));
+      const isUserOrder = currentUser?.id && String(order.userId) === String(currentUser.id);
+      return isStoredLocal || isUserOrder;
+    });
+  }, [orders, myOrderIds, currentUser]);
 
   return (
     <div className="app-wrapper">
@@ -497,6 +547,9 @@ export default function PlantShop() {
         cartCount={cartCount}
         cartTotal={cartTotal}
         onOpenCart={() => setCartOpen(true)}
+        currentUser={currentUser}
+        onOpenAuth={() => setAuthModalOpen(true)}
+        onLogout={handleUserLogout}
       />
 
       {/* Main App Content Body */}
@@ -657,6 +710,14 @@ export default function PlantShop() {
           }}
         />
       )}
+
+      {/* Auth Modal (Login / Register) */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        apiUrl={API_URL}
+      />
 
       {/* Toast Notification */}
       <Toast message={toast} onClose={() => setToast(null)} />

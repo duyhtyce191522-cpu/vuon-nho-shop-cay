@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, ClipboardList, ShieldCheck, ShoppingBag, Sprout } from "lucide-react";
+import { Store, ClipboardList, ShieldCheck, ShoppingBag, Sprout, User, LogOut } from "lucide-react";
 import { formatVND } from "../utils/formatters";
 
 export default function Navbar({
@@ -8,6 +8,9 @@ export default function Navbar({
   cartCount,
   cartTotal,
   onOpenCart,
+  currentUser,
+  onOpenAuth,
+  onLogout,
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -23,7 +26,6 @@ export default function Navbar({
   const navItems = [
     { id: "shop", label: "Cửa hàng", icon: Store },
     { id: "orders", label: "Đơn của tôi", icon: ClipboardList },
-    { id: "admin", label: "Quản trị", icon: ShieldCheck },
   ];
 
   return (
@@ -178,6 +180,138 @@ export default function Navbar({
               );
             })}
           </nav>
+
+          {/* Admin Dashboard Quick Access (ONLY when currentUser.role === 'admin') */}
+          {currentUser?.role === "admin" && (
+            <button
+              onClick={() => onSelectView("admin")}
+              title="Truy cập trang Quản trị Dashboard"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 14px",
+                borderRadius: "var(--r-full)",
+                fontSize: "13px",
+                fontWeight: 700,
+                background:
+                  currentView === "admin"
+                    ? "linear-gradient(135deg, var(--forest-950) 0%, var(--leaf-600) 100%)"
+                    : "var(--forest-900)",
+                color: "#ffffff",
+                boxShadow: "0 2px 10px rgba(22, 51, 36, 0.2)",
+                border: "1px solid var(--forest-800)",
+                cursor: "pointer",
+                transition: "all var(--tr-fast)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+            >
+              <ShieldCheck size={16} color="#86EFAC" />
+              <span>Bảng Quản Trị</span>
+            </button>
+          )}
+
+          {/* User Account / Login Button */}
+          {!currentUser ? (
+            <button
+              onClick={onOpenAuth}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 15px",
+                borderRadius: "var(--r-full)",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--forest-950)",
+                background: "var(--moss-100)",
+                border: "1px solid var(--moss-200)",
+                cursor: "pointer",
+                transition: "all var(--tr-fast)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--moss-200)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--moss-100)";
+              }}
+            >
+              <User size={15} color="var(--leaf-600)" />
+              <span>Đăng nhập</span>
+            </button>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                background: currentUser.role === "admin" ? "var(--moss-100)" : "var(--bg-canvas)",
+                padding: "4px 8px 4px 12px",
+                borderRadius: "var(--r-full)",
+                border: "1px solid var(--border-light)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "14px" }}>{currentUser.role === "admin" ? "🛡️" : "👤"}</span>
+                <span
+                  style={{
+                    fontSize: "12.5px",
+                    fontWeight: 700,
+                    color: "var(--forest-950)",
+                    maxWidth: "110px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={currentUser.full_name || currentUser.username}
+                >
+                  {currentUser.full_name || currentUser.username}
+                </span>
+                {currentUser.role === "admin" && (
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      fontWeight: 700,
+                      background: "var(--forest-900)",
+                      color: "#ffffff",
+                      padding: "1px 6px",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    Admin
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={onLogout}
+                title="Đăng xuất tài khoản"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  padding: "5px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all var(--tr-fast)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--terracotta-500)";
+                  e.currentTarget.style.background = "var(--terracotta-100)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-muted)";
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          )}
 
           {/* Cart Button */}
           <button

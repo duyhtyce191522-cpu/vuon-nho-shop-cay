@@ -1,0 +1,46 @@
+-- Database Schema for Vuon Nho Shop Cay
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name VARCHAR(150) NOT NULL,
+  phone VARCHAR(30) DEFAULT '',
+  address TEXT,
+  role ENUM('customer', 'admin') DEFAULT 'customer',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS products (
+  id VARCHAR(50) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  `desc` TEXT,
+  price INT NOT NULL DEFAULT 0,
+  category VARCHAR(100) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  icon VARCHAR(20) DEFAULT '🌿',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id VARCHAR(50) PRIMARY KEY,
+  user_id INT NULL,
+  buyer_name VARCHAR(150) NOT NULL,
+  buyer_phone VARCHAR(30) NOT NULL,
+  buyer_address TEXT NOT NULL,
+  status VARCHAR(50) DEFAULT 'Chờ xử lý',
+  total INT NOT NULL DEFAULT 0,
+  is_hidden TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX (user_id),
+  INDEX (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id VARCHAR(50) NOT NULL,
+  product_id VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  price INT NOT NULL,
+  qty INT NOT NULL DEFAULT 1,
+  INDEX (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
